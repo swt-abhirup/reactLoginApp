@@ -110,55 +110,127 @@ def dashboard_stats():
     }
     return jsonify(data)
 
+# @app.get("/employees")
+# def get_employees():
+#     conn = get_connection()
+#     cur = conn.cursor(dictionary=True)
+#     cur.execute("SELECT * FROM employee_master ORDER BY emp_id DESC")
+#     data = cur.fetchall()
+#     return jsonify(data)
+
+# @app.get("/employees")
+# def get_employees():
+#     try:
+#         page = int(request.args.get("page", 1))
+#         limit = int(request.args.get("limit", 10))
+#         offset = (page - 1) * limit
+
+#         conn = get_connection()
+#         cur = conn.cursor(dictionary=True)
+
+#         # Get paginated records
+#         cur.execute("""
+#             SELECT emp_id, emp_name, emp_email, emp_phone, emp_designation, created_at
+#             FROM employee_master
+#             ORDER BY emp_id DESC
+#             LIMIT %s OFFSET %s
+#         """, (limit, offset))
+
+#         rows = cur.fetchall()
+
+#         # Get total count
+#         cur.execute("SELECT COUNT(*) AS total FROM employee_master")
+#         total = cur.fetchone()['total']
+
+#         return jsonify({
+#             "data": rows,
+#             "total": total,
+#             "page": page,
+#             "limit": limit
+#         })
+
+#     except Exception as e:
+#         print("Pagination error:", e)
+#         return jsonify({"error": "Server error"}), 500
+
 @app.get("/employees")
 def get_employees():
-    conn = get_connection()
-    cur = conn.cursor(dictionary=True)
-    cur.execute("SELECT * FROM employee_master ORDER BY emp_id DESC")
-    data = cur.fetchall()
-    return jsonify(data)
-
-# @app.post("/employees")
-# def add_employee():
-#     data = request.get_json()
-#     name = data.get("emp_name")
-#     email = data.get("emp_email")
-#     phone = data.get("emp_phone")
-#     desig = data.get("emp_designation")
-
-#     conn = get_connection()
-#     cur = conn.cursor()
-#     cur.execute("""
-#         INSERT INTO employee_master (emp_name, emp_email, emp_phone, emp_designation)
-#         VALUES (%s, %s, %s, %s)
-#     """, [name, email, phone, desig])
-#     conn.commit()
-
-#     return jsonify({"status": "success"})
-
-@app.get("/employees")
-def get_employee():
     try:
         page = int(request.args.get("page", 1))
         limit = int(request.args.get("limit", 10))
         offset = (page - 1) * limit
 
+        # new: get search params
+        q = request.args.get("q", "").strip()  # general search string
+        # Or you can use specific filters: name, email, designation
+        name = request.args.get("name", "").strip()
+        email = request.args.get("email", "").strip()
+        designation = request.args.get("designation", "").strip()
+
         conn = get_connection()
         cur = conn.cursor(dictionary=True)
 
-        # Get paginated records
-        cur.execute("""
-            SELECT emp_id, emp_name, emp_email, emp_phone, emp_designation, created_at
-            FROM employee_master
-            ORDER BY emp_id DESC
-            LIMIT %s OFFSET %s
-        """, (limit, offset))
+        # Build WHERE clause parts
+        where_clauses = []
+        params = []
 
+        if q:
+            where_clauses.append(
+                "(emp_name LIKE %s OR emp_email LIKE %s OR emp_designation LIKE %s)"
+            )
+            likeq = f"%{q}%"
+            params.extend([likeq, likeq, likeq])
+
+        else:
+            if name:
+                where_clauses.append("emp_name LIKE %s")
+                params.append(f"%{name}%")
+            if email:
+                where_clauses.append("emp_email LIKE %s")
+                params.append(f"%{email}%")
+            if designation:
+                where_clauses.append("emp_designation LIKE %s")
+                params.append(f"%{designation}%")
+
+        where_sql = ""
+        if where_clauses:
+            where_sql = "WHERE " + " AND ".join(where_clauses)
+
+        # Total count query
+        count_sql = f"SELECT COUNT(*) AS total FROM employee_master {where_sql}"
+        cur.execute(count_sql, params)
+        total = cur.fetchone()["total"]
+
+        # Data fetch with limit & offset
+        # sql = f"""
+        #   SELECT emp_id, emp_name, emp_email, emp_phone, emp_designation, created_at
+        #   FROM employee_master
+        #   {where_sql}
+        #   ORDER BY emp_id DESC
+        #   LIMIT %s OFFSET %s
+        # """
+        # After you compute where_sql & params and before building final SQL:
+        sort_by = request.args.get("sort_by", "emp_id")
+        order = request.args.get("order", "desc").lower()
+
+        # Whitelist columns:
+        allowed_cols = {"emp_id", "emp_name", "emp_email", "emp_phone", "emp_designation", "created_at"}
+        if sort_by not in allowed_cols:
+            sort_by = "emp_id"
+        if order not in ("asc", "desc"):
+            order = "desc"
+
+        sql = f"""
+        SELECT emp_id, emp_name, emp_email, emp_phone, emp_designation, created_at
+        FROM employee_master
+        {where_sql}
+        ORDER BY {sort_by} {order.upper()}
+        LIMIT %s OFFSET %s
+        """
+
+        params_for_data = params + [limit, offset]
+        cur.execute(sql, params_for_data)
         rows = cur.fetchall()
-
-        # Get total count
-        cur.execute("SELECT COUNT(*) AS total FROM employee_master")
-        total = cur.fetchone()['total']
 
         return jsonify({
             "data": rows,
@@ -168,9 +240,26 @@ def get_employee():
         })
 
     except Exception as e:
-        print("Pagination error:", e)
+        print("Error in /employees:", e)
         return jsonify({"error": "Server error"}), 500
 
+@app.post("/employees")
+def add_employee():
+    data = request.get_json()
+    name = data.get("emp_name")
+    email = data.get("emp_email")
+    phone = data.get("emp_phone")
+    desig = data.get("emp_designation")
+
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO employee_master (emp_name, emp_email, emp_phone, emp_designation)
+        VALUES (%s, %s, %s, %s)
+    """, [name, email, phone, desig])
+    conn.commit()
+
+    return jsonify({"status": "success"})
 
 @app.get("/employees/<int:emp_id>")
 def get_single_employee(emp_id):
@@ -210,6 +299,92 @@ def delete_employee(emp_id):
     conn.commit()
     return jsonify({"status": "deleted"})
 
+
+# --- GET all designations ---
+@app.get("/designations")
+def get_designations():
+    conn = get_connection()
+    cur = conn.cursor(dictionary=True)
+    cur.execute("""
+      SELECT desig_id, title, description, created_at
+      FROM designation_master
+      ORDER BY desig_id DESC
+    """)
+    rows = cur.fetchall()
+    return jsonify(rows)
+
+# --- GET single designation by id ---
+@app.get("/designations/<int:desig_id>")
+def get_single_designation(desig_id):
+    conn = get_connection()
+    cur = conn.cursor(dictionary=True)
+    cur.execute("""
+      SELECT desig_id, title, description, created_at
+      FROM designation_master
+      WHERE desig_id = %s
+    """, (desig_id,))
+    row = cur.fetchone()
+    if not row:
+        return jsonify({"message": "Not found"}), 404
+    return jsonify(row)
+
+# --- CREATE new designation ---
+@app.post("/designations")
+def add_designation():
+    data = request.get_json()
+    title = data.get("title", "").strip()
+    description = data.get("description", "").strip()
+
+    if not title:
+        return jsonify({"message": "Title is required"}), 400
+
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("""
+          INSERT INTO designation_master (title, description)
+          VALUES (%s, %s)
+        """, (title, description))
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"message": str(e)}), 400
+
+    return jsonify({"message": "Designation added"}), 201
+
+# --- UPDATE designation ---
+@app.put("/designations/<int:desig_id>")
+def update_designation(desig_id):
+    data = request.get_json()
+    title = data.get("title", "").strip()
+    description = data.get("description", "").strip()
+
+    if not title:
+        return jsonify({"message": "Title is required"}), 400
+
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("""
+          UPDATE designation_master
+          SET title = %s, description = %s
+          WHERE desig_id = %s
+        """, (title, description, desig_id))
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"message": str(e)}), 400
+
+    return jsonify({"message": "Designation updated"})
+
+# --- DELETE designation ---
+@app.delete("/designations/<int:desig_id>")
+def delete_designation(desig_id):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM designation_master WHERE desig_id = %s", (desig_id,))
+    conn.commit()
+    return jsonify({"message": "Designation deleted"})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
