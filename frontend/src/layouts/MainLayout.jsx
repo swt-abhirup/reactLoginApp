@@ -1,6 +1,7 @@
-import React from "react";
+// src/layouts/MainLayout.jsx
+import React, { useState } from "react";
 import PropTypes from "prop-types";
-import { useNavigate, Link as RouterLink } from "react-router-dom";
+import { useNavigate, Link as RouterLink, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
   Box,
@@ -10,19 +11,31 @@ import {
   IconButton,
   Drawer,
   List,
-  ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
   CssBaseline,
   Divider,
   Avatar,
-  Button, Switch, FormControlLabel
+  Button,
+  Switch,
+  FormControlLabel,
+  Menu,
+  MenuItem,
+  Tooltip,
+  Badge,
+  useTheme,
+  useMediaQuery
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PersonIcon from "@mui/icons-material/Person";
+import WorkIcon from "@mui/icons-material/Work";
+import BusinessIcon from "@mui/icons-material/Business";
+import EventIcon from "@mui/icons-material/Event";
+import NotificationsIcon from "@mui/icons-material/Notifications";
 import LogoutIcon from "@mui/icons-material/Logout";
+import SettingsIcon from "@mui/icons-material/Settings";
 import { useThemeContext } from "../context/ThemeContext";
 
 const drawerWidth = 240;
@@ -30,104 +43,183 @@ const drawerWidth = 240;
 export default function MainLayout({ children, title = "My App" }) {
   const { logout } = useAuth();
   const navigate = useNavigate();
-  const [mobileOpen, setMobileOpen] = React.useState(false);
-  // inside component
+  const location = useLocation();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
+  const [mobileOpen, setMobileOpen] = useState(false);
   const { mode, toggleMode } = useThemeContext();
 
+  // user-menu state
+  const [anchorEl, setAnchorEl] = useState(null);
+  const userMenuOpen = Boolean(anchorEl);
+
   const handleDrawerToggle = () => {
-    setMobileOpen((s) => !s);
+    setMobileOpen((prev) => !prev);
+  };
+
+  const handleUserMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleUserMenuClose = () => {
+    setAnchorEl(null);
   };
 
   const handleLogout = () => {
+    handleUserMenuClose();
     logout();
     navigate("/", { replace: true });
   };
 
-  const menu = [
+  const menuItems = [
     { text: "Dashboard", icon: <DashboardIcon />, to: "/dashboard" },
     { text: "Profile", icon: <PersonIcon />, to: "/profile" },
-    // { text: "Employee Master", icon: <PersonIcon />, to: "/employees" },
     { text: "Employee Master", icon: <PersonIcon />, to: "/employee-master" },
-    { text: "Designation Master", icon: <PersonIcon />, to: "/designations" },
-    { text: "Department Master", icon: <PersonIcon />, to: "/departments" },
-    { text: "Leave Request", icon: <PersonIcon />, to: "/leaves" },
+    { text: "Designation Master", icon: <WorkIcon />, to: "/designations" },
+    { text: "Department Master", icon: <BusinessIcon />, to: "/departments" },
+    { text: "Leave Requests", icon: <EventIcon />, to: "/leaves" },
   ];
 
   const drawer = (
-    <div>
-      <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 1 }}>
-        <Avatar alt="A" />
-        <Box>
-          <Typography variant="subtitle1">Abhirup</Typography>
-          <Typography variant="caption">UI Developer</Typography>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <Box>
+        <Box sx={{ p: 2, textAlign: "center" }}>
+          {/* Optionally logo or brand name */}
+          {/* <img src="/logo.png" alt="Logo" style={{ width: "120px", marginBottom: 8 }} /> */}
+          <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+            MyApp
+          </Typography>
         </Box>
-      </Box>
-      <Divider />
-      <List>
-        {menu.map((m) => (
-          <ListItem key={m.text} disablePadding>
-            <ListItemButton component={RouterLink} to={m.to} onClick={() => setMobileOpen(false)}>
+        <Divider />
+        <List>
+          {menuItems.map((m) => (
+            <ListItemButton
+              key={m.text}
+              component={RouterLink}
+              to={m.to}
+              selected={location.pathname === m.to}
+              onClick={() => { if (isMobile) setMobileOpen(false); }}
+            >
               <ListItemIcon>{m.icon}</ListItemIcon>
               <ListItemText primary={m.text} />
             </ListItemButton>
-          </ListItem>
-        ))}
+          ))}
+        </List>
+      </Box>
 
-      </List>
-      <Divider />
-      <Box sx={{ p: 1 }}>
-        <Button
-          variant="outlined"
-          startIcon={<LogoutIcon />}
-          fullWidth
-          onClick={handleLogout}
-        >
-          Logout
-        </Button>
-        <FormControlLabel sx={{ p: 1 }}
+      <Box sx={{ p: 2 }}>
+        <Divider />
+        <FormControlLabel
           control={<Switch checked={mode === "dark"} onChange={toggleMode} />}
           label="Dark Mode"
-          sx={{ marginLeft: "auto", color: "inherit" }}
+          sx={{ color: "text.secondary", width: "100%" }}
         />
       </Box>
-    </div>
+    </Box>
   );
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", boxSizing: "border-box" }}>
+    <Box sx={{ display: "flex" }}>
       <CssBaseline />
 
+      {/* AppBar */}
       <AppBar
         position="fixed"
+        color="primary"
+        elevation={1}
         sx={{
           width: { md: `calc(100% - ${drawerWidth}px)` },
           ml: { md: `${drawerWidth}px` },
         }}
       >
         <Toolbar>
-          <IconButton
-            color="inherit"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { md: "none" } }}
-            aria-label="open drawer"
-            size="large"
-          >
-            <MenuIcon />
-          </IconButton>
+          {isMobile && (
+            <IconButton
+              color="inherit"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{ mr: 2 }}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
 
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+          <Typography variant="h6" noWrap sx={{ flexGrow: 1 }}>
             {title}
           </Typography>
 
-          <Button color="inherit" onClick={() => navigate("/profile")}>
-            Profile
-          </Button>
+          {/* User Avatar + menu */}
+          <Tooltip title="Account settings">
+            <IconButton
+              onClick={handleUserMenuOpen}
+              size="small"
+              sx={{ ml: 2 }}
+            >
+              <Badge
+                color="error"
+                overlap="circular"
+                badgeContent={3} // example notifications count
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+              >
+                <Avatar sx={{ width: 32, height: 32 }}>U</Avatar>
+              </Badge>
+            </IconButton>
+          </Tooltip>
+
+          <Menu
+            anchorEl={anchorEl}
+            open={userMenuOpen}
+            onClose={handleUserMenuClose}
+            onClick={handleUserMenuClose}
+            transformOrigin={{ horizontal: "right", vertical: "top" }}
+            anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+            PaperProps={{
+              elevation: 4,
+              sx: { mt: 1.5, minWidth: 200 }
+            }}
+          >
+            <MenuItem onClick={() => navigate("/profile")}>
+              <ListItemIcon><PersonIcon fontSize="small" /></ListItemIcon>
+              Profile
+            </MenuItem>
+
+            <MenuItem onClick={() => {/* handle Settings nav */}}>
+              <ListItemIcon><SettingsIcon fontSize="small" /></ListItemIcon>
+              Settings
+            </MenuItem>
+
+            <MenuItem>
+              <ListItemIcon>
+                <NotificationsIcon fontSize="small" />
+              </ListItemIcon>
+              Notifications
+            </MenuItem>
+
+            <Divider />
+
+            <MenuItem>
+              <FormControlLabel
+                control={<Switch checked={mode === "dark"} onChange={toggleMode} />}
+                label="Dark Mode"
+                sx={{ m: 0 }}
+              />
+            </MenuItem>
+
+            <Divider />
+
+            <MenuItem onClick={handleLogout}>
+              <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
+              Logout
+            </MenuItem>
+          </Menu>
+
         </Toolbar>
       </AppBar>
 
-      {/* Drawer (sidebar) */}
+      {/* Drawer / Sidebar */}
       <Box component="nav" sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}>
+        {/* Mobile drawer */}
         <Drawer
           variant="temporary"
           open={mobileOpen}
@@ -135,17 +227,18 @@ export default function MainLayout({ children, title = "My App" }) {
           ModalProps={{ keepMounted: true }}
           sx={{
             display: { xs: "block", md: "none" },
-            "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth },
+            "& .MuiDrawer-paper": { width: drawerWidth },
           }}
         >
           {drawer}
         </Drawer>
 
+        {/* Permanent drawer */}
         <Drawer
           variant="permanent"
           sx={{
             display: { xs: "none", md: "block" },
-            "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth },
+            "& .MuiDrawer-paper": { width: drawerWidth, boxSizing: "border-box" },
           }}
           open
         >
@@ -153,17 +246,17 @@ export default function MainLayout({ children, title = "My App" }) {
         </Drawer>
       </Box>
 
-      {/* Main page content */}
+      {/* Main content */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
           p: 3,
           width: { xs: "100%", md: `calc(100% - ${drawerWidth}px)` },
-          boxSizing: "border-box",
+          boxSizing: "border-box"
         }}
       >
-        <Toolbar /> {/* push content below AppBar */}
+        <Toolbar /> {/* spacer for AppBar */}
         {children}
       </Box>
     </Box>
