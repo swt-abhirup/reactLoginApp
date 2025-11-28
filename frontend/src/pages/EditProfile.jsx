@@ -78,6 +78,9 @@ export default function EditProfile() {
               <TextField
                 label="Full Name"
                 fullWidth
+                size="small"           // <--- make it small
+                margin="dense"         // <--- reduce vertical spacing
+                variant="outlined"     // or 'filled' / 'standard', as you like
                 value={form.full_name}
                 onChange={(e) => updateField("full_name", e.target.value)}
               />
@@ -87,6 +90,9 @@ export default function EditProfile() {
               <TextField
                 label="Email"
                 fullWidth
+                size="small"           // <--- make it small
+                margin="dense"         // <--- reduce vertical spacing
+                variant="outlined"     // or 'filled' / 'standard', as you like
                 value={form.email}
                 onChange={(e) => updateField("email", e.target.value)}
               />
@@ -96,6 +102,9 @@ export default function EditProfile() {
               <TextField
                 label="Phone"
                 fullWidth
+                size="small"           // <--- make it small
+                margin="dense"         // <--- reduce vertical spacing
+                variant="outlined"     // or 'filled' / 'standard', as you like
                 value={form.phone}
                 onChange={(e) => updateField("phone", e.target.value)}
               />

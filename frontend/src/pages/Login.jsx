@@ -38,8 +38,17 @@ export default function Login() {
         <CardContent>
           <Typography variant="h5" textAlign="center">Login</Typography>
 
-          <TextField label="Username" fullWidth margin="normal" onChange={(e) => setU(e.target.value)} />
-          <TextField label="Password" type="password" fullWidth margin="normal" onChange={(e) => setP(e.target.value)} />
+          <TextField label="Username" fullWidth
+          size="small"           // <--- make it small
+          margin="dense"         // / 'normal' <--- reduce vertical spacing
+          variant="outlined"     // or 'filled' / 'standard', as you like
+          onChange={(e) => setU(e.target.value)} />
+          <TextField label="Password" type="password" fullWidth
+          
+          size="small"           // <--- make it small
+          margin="dense"         // / 'normal' <--- reduce vertical spacing
+          variant="outlined"     // or 'filled' / 'standard', as you like
+          onChange={(e) => setP(e.target.value)} />
 
           {error && <Typography color="error">{error}</Typography>}
 

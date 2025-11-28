@@ -17,12 +17,13 @@ import {
   CssBaseline,
   Divider,
   Avatar,
-  Button,
+  Button, Switch, FormControlLabel
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PersonIcon from "@mui/icons-material/Person";
 import LogoutIcon from "@mui/icons-material/Logout";
+import { useThemeContext } from "../context/ThemeContext";
 
 const drawerWidth = 240;
 
@@ -30,6 +31,8 @@ export default function MainLayout({ children, title = "My App" }) {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  // inside component
+  const { mode, toggleMode } = useThemeContext();
 
   const handleDrawerToggle = () => {
     setMobileOpen((s) => !s);
@@ -42,12 +45,15 @@ export default function MainLayout({ children, title = "My App" }) {
 
   const menu = [
     { text: "Dashboard", icon: <DashboardIcon />, to: "/dashboard" },
-    { text: "Profile", icon: <PersonIcon />, to: "/profile" }, // create route later
+    { text: "Profile", icon: <PersonIcon />, to: "/profile" },
+    // { text: "Employee Master", icon: <PersonIcon />, to: "/employees" },
+    { text: "Employee Master", icon: <PersonIcon />, to: "/employee-master" },
+    { text: "Designation Master", icon: <PersonIcon />, to: "/employee-master" },
   ];
 
   const drawer = (
     <div>
-      <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 2 }}>
+      <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 1 }}>
         <Avatar alt="A" />
         <Box>
           <Typography variant="subtitle1">Abhirup</Typography>
@@ -64,8 +70,8 @@ export default function MainLayout({ children, title = "My App" }) {
             </ListItemButton>
           </ListItem>
         ))}
-      </List>
 
+      </List>
       <Divider />
       <Box sx={{ p: 1 }}>
         <Button
@@ -76,12 +82,17 @@ export default function MainLayout({ children, title = "My App" }) {
         >
           Logout
         </Button>
+        <FormControlLabel sx={{ p: 1 }}
+          control={<Switch checked={mode === "dark"} onChange={toggleMode} />}
+          label="Dark Mode"
+          sx={{ marginLeft: "auto", color: "inherit" }}
+        />
       </Box>
     </div>
   );
 
   return (
-    <Box sx={{ display: "flex" }}>
+    <Box sx={{ display: "flex", minHeight: "100vh", boxSizing: "border-box" }}>
       <CssBaseline />
 
       <AppBar
@@ -113,7 +124,7 @@ export default function MainLayout({ children, title = "My App" }) {
         </Toolbar>
       </AppBar>
 
-      {/* Drawer for desktop */}
+      {/* Drawer (sidebar) */}
       <Box component="nav" sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}>
         <Drawer
           variant="temporary"
@@ -140,18 +151,17 @@ export default function MainLayout({ children, title = "My App" }) {
         </Drawer>
       </Box>
 
-      {/* Main content */}
+      {/* Main page content */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
           p: 3,
-          width: { md: `calc(100% - ${drawerWidth}px)` },
-          minHeight: "100vh",
-          bgcolor: "background.default",
+          width: { xs: "100%", md: `calc(100% - ${drawerWidth}px)` },
+          boxSizing: "border-box",
         }}
       >
-        <Toolbar /> {/* pushes content below AppBar */}
+        <Toolbar /> {/* push content below AppBar */}
         {children}
       </Box>
     </Box>
