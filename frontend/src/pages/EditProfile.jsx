@@ -63,7 +63,7 @@ export default function EditProfile() {
 
   return (
     <MainLayout title="Edit Profile">
-      <Paper sx={{ p: 3, maxWidth: 700 }}>
+      <Paper sx={{ p: 3, maxWidth: 1000 }}>
         <Typography variant="h5" gutterBottom>
           Edit Profile
         </Typography>

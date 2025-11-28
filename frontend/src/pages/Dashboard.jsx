@@ -46,34 +46,34 @@ export default function Dashboard() {
         <Grid item xs={12} sm={6} md={4}>
           <Card><CardContent>
             <Typography variant="h6">Total Users</Typography>
-            <Typography variant="h4">{stats.total_users}</Typography>
+            <Typography variant="h5">{stats.total_users}</Typography>
           </CardContent></Card>
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
           <Card><CardContent>
             <Typography variant="h6">Today's Sales</Typography>
-            <Typography variant="h4">{stats.today_sales}</Typography>
+            <Typography variant="h5">{stats.today_sales}</Typography>
           </CardContent></Card>
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
           <Card><CardContent>
             <Typography variant="h6">Total Revenue</Typography>
-            <Typography variant="h4">₹{stats.total_revenue}</Typography>
+            <Typography variant="h5">₹{stats.total_revenue}</Typography>
           </CardContent></Card>
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
           <Card><CardContent>
             <Typography variant="h6">Pending Tasks</Typography>
-            <Typography variant="h4">{stats.pending_tasks}</Typography>
+            <Typography variant="h5">{stats.pending_tasks}</Typography>
           </CardContent></Card>
         </Grid>
       </Grid>
 
       {/* GAP */}
-      <div style={{ marginTop: "20px" }} />
+      <div style={{ marginTop: "10px" }} />
 
       {/* CHARTS */}
       <Grid container spacing={3}>

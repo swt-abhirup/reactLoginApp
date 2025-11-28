@@ -49,7 +49,7 @@ export default function Profile() {
         ) : error ? (
           <Typography color="error">{error}</Typography>
         ) : user ? (
-          <Paper sx={{ p: 3, maxWidth: 800 }}>
+          <Paper sx={{ p: 3, maxWidth: 1200 }}>
             <Typography variant="h5" gutterBottom>
               {user.full_name || user.username}
             </Typography>

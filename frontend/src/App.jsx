@@ -9,6 +9,9 @@ import EmployeeList from "./Employee/EmployeeList";
 import EmployeeAdd from "./Employee/EmployeeAdd";
 import EmployeeEdit from "./Employee/EmployeeEdit";
 import EmployeeMaster from "./Employee/EmployeeMaster";
+import DesignationMaster from "./pages/DesignationMaster";
+import DepartmentMaster from "./pages/DepartmentMaster";
+import LeaveRequest from "./pages/LeaveRequest";
 
 export default function App() {
   return (
@@ -48,11 +51,15 @@ export default function App() {
         <Route path="/employees/add" element={<EmployeeAdd />} />
         <Route path="/employees/edit/:id" element={<EmployeeEdit />} />
         <Route path="/employee-master" element={
-  <ProtectedRoute>
-    <EmployeeMaster />
-  </ProtectedRoute>
-} />
+          <ProtectedRoute>
+            <EmployeeMaster />
+          </ProtectedRoute>
+        } />
 
+        <Route path="/designations" element={<ProtectedRoute><DesignationMaster /></ProtectedRoute>} />
+        <Route path="/departments" element={<ProtectedRoute><DepartmentMaster /></ProtectedRoute>} />
+        <Route path="/leaves" element={<ProtectedRoute><LeaveRequest /></ProtectedRoute>} />
+        
         </Routes>
       </BrowserRouter>
     </AuthProvider>

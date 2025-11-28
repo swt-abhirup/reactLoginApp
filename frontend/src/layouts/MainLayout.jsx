@@ -48,7 +48,9 @@ export default function MainLayout({ children, title = "My App" }) {
     { text: "Profile", icon: <PersonIcon />, to: "/profile" },
     // { text: "Employee Master", icon: <PersonIcon />, to: "/employees" },
     { text: "Employee Master", icon: <PersonIcon />, to: "/employee-master" },
-    { text: "Designation Master", icon: <PersonIcon />, to: "/employee-master" },
+    { text: "Designation Master", icon: <PersonIcon />, to: "/designations" },
+    { text: "Department Master", icon: <PersonIcon />, to: "/departments" },
+    { text: "Leave Request", icon: <PersonIcon />, to: "/leaves" },
   ];
 
   const drawer = (

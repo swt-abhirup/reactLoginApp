@@ -199,9 +199,9 @@ export default function EmployeeMaster() {
   return (
     <MainLayout title="Employee Master">
       <Box p={3}>
-        <Typography variant="h6" gutterBottom>
+        {/* <Typography variant="h6" gutterBottom>
           Employee Master
-        </Typography>
+        </Typography> */}
 
         {message && <Alert severity="info" sx={{ mb: 2 }}>{message}</Alert>}
 

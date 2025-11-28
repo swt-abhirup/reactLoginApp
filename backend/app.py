@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import bcrypt
 from db import get_connection
+from datetime import datetime
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}}, methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
@@ -385,6 +386,172 @@ def delete_designation(desig_id):
     cur.execute("DELETE FROM designation_master WHERE desig_id = %s", (desig_id,))
     conn.commit()
     return jsonify({"message": "Designation deleted"})
+
+# --- GET all departments ---
+@app.get("/departments")
+def get_departments():
+    conn = get_connection()
+    cur = conn.cursor(dictionary=True)
+    cur.execute("""
+      SELECT dept_id, dept_name, description, created_at
+      FROM department_master
+      ORDER BY dept_id DESC
+    """)
+    return jsonify(cur.fetchall())
+
+# --- GET single department ---
+@app.get("/departments/<int:dept_id>")
+def get_department(dept_id):
+    conn = get_connection()
+    cur = conn.cursor(dictionary=True)
+    cur.execute("""
+      SELECT dept_id, dept_name, description, created_at
+      FROM department_master
+      WHERE dept_id = %s
+    """, (dept_id,))
+    row = cur.fetchone()
+    if not row:
+        return jsonify({"message":"Not found"}), 404
+    return jsonify(row)
+
+# --- CREATE department ---
+@app.post("/departments")
+def add_department():
+    data = request.get_json()
+    name = data.get("dept_name", "").strip()
+    desc = data.get("description", "").strip()
+    if not name:
+        return jsonify({"message":"Name is required"}), 400
+
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+          "INSERT INTO department_master (dept_name, description) VALUES (%s, %s)",
+          (name, desc)
+        )
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"message": str(e)}), 400
+
+    return jsonify({"message":"Department added"}), 201
+
+# --- UPDATE department ---
+@app.put("/departments/<int:dept_id>")
+def update_department(dept_id):
+    data = request.get_json()
+    name = data.get("dept_name", "").strip()
+    desc = data.get("description", "").strip()
+    if not name:
+        return jsonify({"message":"Name is required"}), 400
+
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("""
+          UPDATE department_master
+          SET dept_name=%s, description=%s
+          WHERE dept_id=%s
+        """, (name, desc, dept_id))
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"message": str(e)}), 400
+
+    return jsonify({"message":"Department updated"})
+
+# --- DELETE department ---
+@app.delete("/departments/<int:dept_id>")
+def delete_department(dept_id):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM department_master WHERE dept_id=%s", (dept_id,))
+    conn.commit()
+    return jsonify({"message":"Department deleted"})
+
+@app.get("/leaves")
+def get_leaves():
+    conn = get_connection()
+    cur = conn.cursor(dictionary=True)
+    cur.execute("""
+      SELECT l.leave_id, l.emp_id, e.emp_name, l.leave_type,
+             l.start_date, l.end_date, l.reason, l.status,
+             l.applied_at, l.updated_at
+      FROM leave_requests l
+      JOIN employee_master e ON e.emp_id = l.emp_id
+      ORDER BY l.leave_id DESC
+    """)
+    return jsonify(cur.fetchall())
+
+# @app.post("/leaves")
+# def apply_leave():
+#     data = request.get_json()
+#     emp_id = data.get("emp_id")
+#     leave_type = data.get("leave_type")
+#     start = data.get("start_date")
+#     end = data.get("end_date")
+#     reason = data.get("reason", "")
+
+#     if not (emp_id and leave_type and start and end):
+#         return jsonify({"message":"Missing data"}), 400
+
+#     conn = get_connection()
+#     cur = conn.cursor()
+#     cur.execute("""
+#       INSERT INTO leave_requests (emp_id, leave_type, start_date, end_date, reason)
+#       VALUES (%s, %s, %s, %s, %s)
+#     """, (emp_id, leave_type, start, end, reason))
+#     conn.commit()
+#     return jsonify({"message":"Leave applied"}), 201
+
+@app.post("/leaves")
+def apply_leave():
+    data = request.get_json()
+    emp_id = data.get("emp_id")
+    leave_type = data.get("leave_type")
+    start = data.get("start_date")  # e.g. '2025-11-28T18:30:00.000Z'
+    end = data.get("end_date")
+    reason = data.get("reason", "")
+
+    try:
+        # convert ISO string to date (or datetime) object
+        start_dt = datetime.fromisoformat(start.replace("Z", "+00:00"))
+        end_dt = datetime.fromisoformat(end.replace("Z", "+00:00"))
+    except Exception as e:
+        return jsonify({"message": "Invalid date format"}), 400
+
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+      INSERT INTO leave_requests (emp_id, leave_type, start_date, end_date, reason)
+      VALUES (%s, %s, %s, %s, %s)
+    """, (emp_id, leave_type, start_dt.date(), end_dt.date(), reason))
+    conn.commit()
+    return jsonify({"message":"Leave applied"}), 201
+
+
+@app.put("/leaves/<int:leave_id>")
+def update_leave(leave_id):
+    data = request.get_json()
+    # You may allow employee to update before approval, or admin to approve/reject
+    status = data.get("status")  # 'approved' or 'rejected'
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+      UPDATE leave_requests SET status=%s, updated_at=NOW() WHERE leave_id=%s
+    """, (status, leave_id))
+    conn.commit()
+    return jsonify({"message":"Leave status updated"})
+
+@app.delete("/leaves/<int:leave_id>")
+def delete_leave(leave_id):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM leave_requests WHERE leave_id=%s", (leave_id,))
+    conn.commit()
+    return jsonify({"message":"Leave deleted"})
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
